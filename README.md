@@ -27,5 +27,5 @@ A collection of usefull functions for scraping images for Object Detection pipel
   Opens all pictures one by one and lets you chose if you want to keep (y) or delete (n) the picture. To be used as root in bash.
 
 
-(The scrape from google function is a reviewed version of the code found on
+(The scrape_from_google-function is a reviewed and updated version of the code found on
 https://towardsdatascience.com/image-scraping-with-python-a96feda8af2d)
