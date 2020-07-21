@@ -1,6 +1,7 @@
 # scrape_images
 
-A collection of usefull functions for scraping images for Object detection pipelines
+A collection of usefull functions for scraping images for Object Detection pipelines, as well as sorting and cleaning the data.
+
 - ###### scrape_from_google()
 
   Uses selenium to automatically download a specified quantity of images from google image search.  
@@ -15,11 +16,15 @@ A collection of usefull functions for scraping images for Object detection pipel
 
 - ###### count_images_in_subfolders()
 
-  Counts how many files/images are in subfolders/classes.
+  Shows subdirectory in a in a given directory and counts the number of files in these subdirectories.
 
 - ###### copy_sample_with_folders_to_new_folder()
 
+  Copies a random sample of x images in subdirectories in the source directory to the target folder, recreating the subdirectories.
+
 - ###### delete_images()
+
+  Opens all pictures one by one and lets you chose if you want to keep (y) or delete (n) the picture. To be used as root in bash.
 
 
 (The scrape from google function is a reviewed version of the code found on
