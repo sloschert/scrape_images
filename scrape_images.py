@@ -6,19 +6,37 @@ from shutil import copy
 import psutil
 import hashlib
 import requests
-import pandas as pd
 from PIL import Image
-import selenium
 from selenium import webdriver
-import random
+from random import sample
 import keyboard
 
 
 def scrape_from_google(search_term:str, driver_path:str, target_path='./images', number_images=300):
+    """
+    Uses selenium to automatically download a specified quantity of images
+    from google image search.
+    This function needs the webdriver for Chrome (chromedriver) on your computer.
 
+    INPUT:
+    1) The term you want to search for
+    2) The executable path to your chromedriver file
+    3) The target path to store the found pictures (it will create a subfolder
+    with the name of the search term)
+    4) Number of images you want to download
+
+    OUTPUT:
+    Downloads images to your computer.
+
+    SEARCH_TERM = 'banana'
+    scrape_from_google(search_term = SEARCH_TERM, driver_path = \
+    "/home/user/webdriver/chromedriver_linux64/chromedriver", \
+    target_path="./data", number_images=300)
+
+    """
     def fetch_image_urls(query:str, max_links_to_fetch:int, wd:webdriver, sleep_between_interactions:int=1):
         """
-        helper function 1
+        Helper function 1
         """
         def scroll_to_end(wd):
             wd.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -33,8 +51,7 @@ def scrape_from_google(search_term:str, driver_path:str, target_path='./images',
         image_urls = set()
         image_count = 0
         results_start = 0
-        #abort_please = False
-        while image_count < max_links_to_fetch: #and abort_please == False:
+        while image_count < max_links_to_fetch:
             scroll_to_end(wd)
 
             # get all image thumbnail results
@@ -64,35 +81,27 @@ def scrape_from_google(search_term:str, driver_path:str, target_path='./images',
                     break
             else:
                 print("Found:", len(image_urls), "image links, looking for more ...")
-    #             !! added the following 3 lines of code and commented out the empty return statement
-    #             --> problem resolved (perhaps load more button does not exist anymore?)
                 time.sleep(2)
-    #             return
                 scroll_to_end(wd)
                 time.sleep(2)
                 load_more_button = wd.find_element_by_css_selector(".mye4qd")
                 if load_more_button:
                     wd.execute_script("document.querySelector('.mye4qd').click();")
-
-                # Added the "keine weiteren einträge vorhanden"-button!
                 no_more_entries_button = ""
                 no_more_entries_button = wd.find_element_by_css_selector("div.OuJzKb.Bqq24e")
 
                 if "Keine weiteren Beiträge" in no_more_entries_button.get_attribute("innerHTML"):
                     print(no_more_entries_button.get_attribute("innerHTML"))
-                    #abort_please = True
                     break
-
             # move the result startpoint further down
             results_start = len(thumbnail_results)
         return image_urls
 
     def persist_image(folder_path:str,url:str):
         """
-        helper function 2
+        Helper function 2
         """
         try:
-    #             added timeout to requests-get-function!
             print(f"downloading {url}...")
             image_content = requests.get(url, timeout=5).content
 
@@ -109,35 +118,12 @@ def scrape_from_google(search_term:str, driver_path:str, target_path='./images',
         except Exception as e:
             print(f"ERROR - Could not save {url} - {e}")
 
-    """
-    Searching and downloading images on google search.
-    This function uses selenium and needs the webdriver for Chrome (chromedriver) on your disc.
 
-    INPUT:
-    1) The term you want to search for
-    2) The path to your chromedriver file
-    3) The target path, where you want to store the found pictures (it will create a subfolder
-    with the name of the search term)
-    4) The number of images you want to download
-
-    OUTPUT:
-    Downloads images to your computer.
-
-    EXAMPLE:
-    SEARCH_TERM = 'banana'
-    scrape_from_google(search_term = SEARCH_TERM, driver_path =
-    "./driver/chromedriver_linux64/chromedriver",
-    target_path="./google_image_scraping/images", number_images=300)
-
-    """
     target_folder = os.path.join(target_path,'_'.join(search_term.split(' ')))
-
     if not os.path.exists(target_folder):
         os.makedirs(target_folder)
-
     with webdriver.Chrome(executable_path=driver_path) as wd:
         res = fetch_image_urls(search_term, number_images, wd=wd, sleep_between_interactions=0.1)
-
     for elem in res:
         persist_image(target_folder,elem)
 
@@ -145,6 +131,8 @@ def scrape_from_google(search_term:str, driver_path:str, target_path='./images',
 def scrape_from_imagenet(object_name, amount_of_downloads=300, imagenet_links_link=None):
 
     """
+    Downloads all images of a list of links, as provided by image-net.org.
+
     INPUT:
     Takes in a object name (e.g. 'banana'), the imagenet link of links (e.g.
     "http://image-net.org/api/text/imagenet.synset.geturls?wnid=n07720875") and
@@ -223,15 +211,15 @@ def delete_broken_images(folder:str, delete=False):
             else:
                 print(f"Detected: {i} NOT an image")
 
-# find out how many pictures are there in each folder
-
 def count_images_in_subfolders(directory:str):
     """
-    shows subdirectory in a in a given directory and counts the number of files in these subdirectories.
+    Shows subdirectory in a in a given directory and counts the number of files in these subdirectories.
+
     INPUT:
-    directory (string), e.g. "./data_medium"
-    RETURNS:
-    sorted list of tuples (nr of images in subdirectory, name of subdirectory)
+    Directory (string), e.g. "./data_medium"
+
+    OUTPUT:
+    Returns a sorted list of tuples (nr of images in subdirectory, name of subdirectory)
     """
     list_of_counts = []
     for d in os.listdir(directory):
@@ -242,8 +230,8 @@ def count_images_in_subfolders(directory:str):
 
 def copy_sample_with_folders_to_new_folder(src_dir:str, target_dir:str, nr_images:int):
     """
-    copy a random sample of x images in subdirectories in the source directory to the target folder,
-    recreating the subdirectories.
+    Copies a random sample of x images in subdirectories in the source directory
+    into the target folder, recreating the corresponding subdirectories.
 
     EXAMPLE:
     copy_sample_with_folders_to_new_folder("./trash/data_small", "./trash2", 50)
@@ -257,7 +245,7 @@ def copy_sample_with_folders_to_new_folder(src_dir:str, target_dir:str, nr_image
         target_subdir = os.path.join(target_dir, d)
         os.mkdir(target_subdir)
         if len(os.listdir(src_subdir)) >= nr_images:
-            file_selection = random.sample(os.listdir(src_subdir), nr_images)
+            file_selection = sample(os.listdir(src_subdir), nr_images)
             for f in file_selection:
                 copy(os.path.join(src_subdir, f), target_subdir)
         else:
@@ -268,10 +256,10 @@ def copy_sample_with_folders_to_new_folder(src_dir:str, target_dir:str, nr_image
 
 def delete_images():
     """
-    WARNING: Deletes data if confirmed with 'y'!
+    WARNING: Deletes data, if confirmed with 'y'!
 
-    works only as root, please use in bash.
-    opens all pictures one by one and lets you chose if you want to keep (y) or delete (n) the picture.
+    Works only as root, please use in bash.
+    Opens all pictures one by one and lets you chose if you want to keep (y) or delete (n) the picture.
 
     EXAMPLES:
     sudo -HE env PATH=$PATH PYTHONPATH=$PYTHONPATH python scrape_images.py "./data/Champignons"
@@ -282,9 +270,9 @@ def delete_images():
 
     def kill_image():
         """
-        helper function, closes the window
+        Helper function which closes the window/kills the process started by im.show.
         """
-        for proc in psutil.process_iter():   # kills the process started by im.show
+        for proc in psutil.process_iter():
             if proc.name() == "display":
                 proc.kill()
 
@@ -312,7 +300,3 @@ def delete_images():
             print("no valid key, proceeding...")
         kill_image()
         time.sleep(0.2)
-
-
-if __name__ == '__main__':
-    pass
